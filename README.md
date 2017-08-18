@@ -8,7 +8,7 @@ Networks
     Multilayer Perceptron (Nikhil)
     Convolutional Network (Nikhil) - done
     Neural Style (Anish)
-    Autoencoder (Hassan)
+    Autoencoder (Hassan) - done
     Denoising Autoencoder (Hassan)
     Convolutional Autoencoder (Hassan) 
     RNN (Nikhil)
