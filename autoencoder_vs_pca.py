@@ -19,9 +19,9 @@ def scatter(codes, labels):
         ('#c0392b', 'x'),
         ('#f39c12', 'x'),
     ]
-    for num in xrange(10):
-        plt.scatter([codes[:,0][i] for i in xrange(len(labels)) if labels[i] == num],
-        [codes[:,1][i] for i in xrange(len(labels)) if labels[i] == num], 7,
+    for num in range(10):
+        plt.scatter([codes[:,0][i] for i in range(len(labels)) if labels[i] == num],
+        [codes[:,1][i] for i in range(len(labels)) if labels[i] == num], 7,
         label=str(num), color = colors[num][0], marker=colors[num][1])
     plt.legend()
     plt.show()
@@ -32,9 +32,9 @@ if __name__ == '__main__':
     parser.add_argument('savepath', nargs=1, type=str)
     args = parser.parse_args()
 
-    print "\nPULLING UP MNIST DATA"
+    print("\nPULLING UP MNIST DATA")
     mnist = input_data.read_data_sets("data/", one_hot=False)
-    print mnist.test.labels
+    print(mnist.test.labels)
 
     # print "\nSTARTING PCA"
     # pca = decomposition.PCA(n_components=2)
@@ -67,15 +67,18 @@ if __name__ == '__main__':
 
             saver = tf.train.Saver()
 
-            sess = tf.Session()
+            runtimeConfig = tf.ConfigProto()
+            runtimeConfig.gpu_options.allow_growth = True
+
+            sess = tf.Session(config=runtimeConfig)
 
 
-            print "\nSTARTING AUTOENCODER\n", args.savepath[0]
+            print("\nSTARTING AUTOENCODER\n {}".format(args.savepath[0]))
             sess = tf.Session()
             saver = tf.train.Saver()
             saver.restore(sess, args.savepath[0])
 
-            print "\nGENERATING AE CODES AND RECONSTRUCTION"
+            print("\nGENERATING AE CODES AND RECONSTRUCTION")
             ae_codes, ae_reconstruction = sess.run([code, output], feed_dict={x: mnist.test.images * np.random.randint(2, size=(784)), phase_train: True})
 
             scatter(ae_codes, mnist.test.labels)

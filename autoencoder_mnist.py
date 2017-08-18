@@ -1,6 +1,6 @@
 import input_data
 import tensorflow as tf
-from tensorflow.python import control_flow_ops
+from tensorflow.python.ops import control_flow_ops
 import time, argparse
 
 # Architecture
@@ -84,9 +84,9 @@ def decoder(code, n_code, phase_train):
 
 def loss(output, x):
     with tf.variable_scope("training"):
-        l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.sub(output, x)), 1))
+        l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), 1))
         train_loss = tf.reduce_mean(l2)
-        train_summary_op = tf.scalar_summary("train_cost", train_loss)
+        train_summary_op = tf.summary.scalar("train_cost", train_loss)
         return train_loss, train_summary_op
 
 def training(cost, global_step):
@@ -97,15 +97,15 @@ def training(cost, global_step):
 
 def image_summary(label, tensor):
     tensor_reshaped = tf.reshape(tensor, [-1, 28, 28, 1])
-    return tf.image_summary(label, tensor_reshaped)
+    return tf.summary.image(label, tensor_reshaped)
 
 def evaluate(output, x):
     with tf.variable_scope("validation"):
         in_im_op = image_summary("input_image", x)
         out_im_op = image_summary("output_image", output)
-        l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.sub(output, x, name="val_diff")), 1))
+        l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x, name="val_diff")), 1))
         val_loss = tf.reduce_mean(l2)
-        val_summary_op = tf.scalar_summary("val_cost", val_loss)
+        val_summary_op = tf.summary.scalar("val_cost", val_loss)
         return val_loss, in_im_op, out_im_op, val_summary_op
 
 
@@ -137,19 +137,22 @@ if __name__ == '__main__':
 
             eval_op, in_im_op, out_im_op, val_summary_op = evaluate(output, x)
 
-            summary_op = tf.merge_all_summaries()
+            summary_op = tf.summary.merge_all()
 
             saver = tf.train.Saver(max_to_keep=200)
 
-            sess = tf.Session()
+            runtimeConfig = tf.ConfigProto()
+            runtimeConfig.gpu_options.allow_growth = True
 
-            train_writer = tf.train.SummaryWriter("mnist_autoencoder_hidden=" + n_code + "_logs/",
-                                                graph=sess.graph)
+            sess = tf.Session(config=runtimeConfig)
 
-            val_writer = tf.train.SummaryWriter("mnist_autoencoder_hidden=" + n_code + "_logs/",
-                                                graph=sess.graph)
+            train_writer = tf.summary.FileWriter("tf_events/mnist_autoencoder_hidden=" + n_code + "_logs/",
+                                                sess.graph)
 
-            init_op = tf.initialize_all_variables()
+            val_writer = tf.summary.FileWriter("tf_events/mnist_autoencoder_hidden=" + n_code + "_logs/",
+                                                sess.graph)
+
+            init_op = tf.global_variables_initializer()
 
             sess.run(init_op)
 
@@ -168,7 +171,7 @@ if __name__ == '__main__':
                     avg_cost += new_cost/total_batch
                 # Display logs per epoch step
                 if epoch % display_step == 0:
-                    print "Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost)
+                    print("Epoch {:04d}: cost = {:.9f}".format(epoch+1, avg_cost))
 
                     train_writer.add_summary(train_summary, sess.run(global_step))
 
@@ -176,14 +179,14 @@ if __name__ == '__main__':
                     val_writer.add_summary(in_im, sess.run(global_step))
                     val_writer.add_summary(out_im, sess.run(global_step))
                     val_writer.add_summary(val_summary, sess.run(global_step))
-                    print "Validation Loss:", validation_loss
+                    print("Validation Loss: {:.9f}".format(validation_loss))
 
-                    saver.save(sess, "mnist_autoencoder_hidden=" + n_code + "_logs/model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
+                    saver.save(sess, "tf_checkpoints/mnist_autoencoder_hidden=" + n_code + "_logs/model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
 
 
-            print "Optimization Finished!"
+            print("Optimization Finished!")
 
 
             test_loss = sess.run(eval_op, feed_dict={x: mnist.test.images, phase_train: False})
 
-            print "Test Loss:", loss
+            print("Test Loss: {:.9f}".format(test_loss))
