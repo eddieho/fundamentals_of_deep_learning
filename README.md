@@ -40,3 +40,15 @@ Optimizers
     MLP + ADAM
     MLP + FTRL
     MLP + ADADELTA
+
+
+## Summary of changes (examples)
+|Original|TF v1.2.x compatible|
+|---|---|
+|tf.image_summary("filters", V_T, max_images=64)|tf.summary.image("filters", V_T, max_outputs=64)|
+|tf.nn.sparse_softmax_cross_entropy_with_logits(output, tf.cast(y, tf.int64))|tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output, labels=tf.cast(y, tf.int64))|
+|tf.scalar_summary("cost", cost)|tf.summary.scalar("cost", cost)|
+|tf.merge_all_summaries()|tf.summary.merge_all()|
+|tf.train.SummaryWriter("conv_cifar_logs/",graph_def=sess.graph_def)|tf.summary.FileWriter("tf_events/conv_cifar_logs/", tf.get_default_graph())|
+|tf.initialize_all_variables()|tf.global_variables_initializer()|
+
