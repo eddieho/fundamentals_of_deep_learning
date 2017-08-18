@@ -6,11 +6,11 @@ Networks
 
     Logistic Regression (Nikhil)
     Multilayer Perceptron (Nikhil)
-    Convolutional Network (Nikhil)
+    Convolutional Network (Nikhil) - done
     Neural Style (Anish)
     Autoencoder (Hassan)
     Denoising Autoencoder (Hassan)
-    Convolutional Autoencoder (Hassan)  - done
+    Convolutional Autoencoder (Hassan) 
     RNN (Nikhil)
     LSTM Network (Nikhil)
     GRU Network (Nikhil)
