@@ -55,6 +55,7 @@ Optimizers
 |tf.mul()|tf.multiply()|
 |from tensorflow.python import control_flow_ops|from tensorflow.python.ops import control_flow_ops|
 |Python 2.x print|Python 3.x style print("string".format(val1,val2,...)|
+|xrange(M,N) - Python 2.7|range(M,N) - Python 3.x|
 
 In addition to mandatory changes due to TensorFlow v1.2.x, the following changes have been made:
 1. Use config to control TF session's memory usage
