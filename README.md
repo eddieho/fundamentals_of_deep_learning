@@ -64,8 +64,11 @@ In addition to mandatory changes due to TensorFlow v1.3.x, the following changes
 By default, TensorFlow grabs all available memory from GPU device and a TF session would use the GPU exclusively. If these lines are used, then the TF session will only use memory as needed. Let's say a GPU has 8GB memory. Without this parameter, a TF session will get about 7.xGB. If your TF code only needs 300MB memory with this parameter, then TF session will only grab 300MB GPU memory. You can verify the difference by the command nvidia-smi on Nvidia GPU.
 
 runtimeConfig = tf.ConfigProto()
+
 runtimeConfig.gpu_options.allow_growth = True
+
 sess = tf.Session(config=runtimeConfig)
+
 
 2. calls datetime.now() to measure time taken
 I want to measure how long it takes to train different models so I can see the performance difference on CPU and different GPU's. Hence I have added calls to datetime.now() at beginning and end of modified Python scripts to print elapsed time. 
