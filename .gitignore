@@ -1,0 +1,5 @@
+data
+logs
+tf_events
+tf_models
+tf_checkpoints
