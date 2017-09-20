@@ -56,6 +56,7 @@ Optimizers
 |tf.mul()|tf.multiply()|
 |from tensorflow.python import control_flow_ops|from tensorflow.python.ops import control_flow_ops|
 |tf.nn.nce_loss(weights, biases, inputs, labels,...)|tf.nn.nce_loss(weights, biases, labels, inputs,...) - not sure if this is an erratta even on pre-1.0 TF. Use named arguments in ported skipgram.py|
+|tf.split(split_dim, num_split, value, name='split')|split(value,num_or_size_splits,axis=0,num=None,name='split')|
 |Python 2.x print|Python 3.x style print("string".format(val1,val2,...)|
 |xrange(M,N) - Python 2.7|range(M,N) - Python 3.x|
 
