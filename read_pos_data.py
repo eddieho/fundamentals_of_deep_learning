@@ -11,9 +11,10 @@ test_dataset_raw = {}
 test_dataset = []
 dataset_vocab = {}
 
-print "LOADING PRETRAINED WORD2VEC MODEL... "
+print("LOADING PRETRAINED WORD2VEC MODEL... ")
 if not os.path.isdir("data/word2vecdb"):
-    model = gensim.models.Word2Vec.load_word2vec_format('/Users/nikhilbuduma/Downloads/GoogleNews-vectors-negative300.bin', binary=True)
+    # model = gensim.models.Word2Vec.load_word2vec_format('/Users/nikhilbuduma/Downloads/GoogleNews-vectors-negative300.bin', binary=True)
+    model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
     db = leveldb.LevelDB("data/word2vecdb")
 
     try:
@@ -115,13 +116,13 @@ if not os.path.isdir("data/word2vecdb"):
     total = len(dataset_vocab.keys())
     for word in dataset_vocab:
         if counter % 100 == 0:
-            print "Inserted %d words out of %d total" % (counter, total)
+            print("Inserted {} words out of {} total".format(counter, total))
         if word in model:
             db.Put(word, model[word])
         elif word in nonmodel_cache:
             db.Put(word, nonmodel_cache[word])
         else:
-            print word
+            print(word)
             nonmodel_cache[word] = np.random.uniform(-0.25, 0.25, 300).astype(np.float32)
             db.Put(word, nonmodel_cache[word])
         counter += 1

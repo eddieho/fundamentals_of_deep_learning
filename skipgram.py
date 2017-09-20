@@ -56,6 +56,7 @@ def validation(embedding_matrix, x_val):
     norm = tf.reduce_sum(embedding_matrix**2, 1, keep_dims=True)**0.5
     normalized = embedding_matrix/norm
     val_embeddings = tf.nn.embedding_lookup(normalized, x_val)
+    # see https://en.wikipedia.org/wiki/Cosine_similarity for calculation of cosine similarity
     cosine_similarity = tf.matmul(val_embeddings, normalized, transpose_b=True)
     return normalized, cosine_similarity
 
@@ -115,6 +116,7 @@ if __name__ == '__main__':
 
                     if step % val_step == 0:
                         _, similarity = sess.run(val_op)
+                        print('shape of similarity = {}'.format(similarity.shape))
                         for i in range(val_size):
                             val_word = data.reverse_dictionary[val_examples[i]]
                             neighbors = (-similarity[i, :]).argsort()[1:top_match+1]
@@ -123,7 +125,7 @@ if __name__ == '__main__':
                                 print_str += " %s," % data.reverse_dictionary[neighbors[k]]
                             print(print_str[:-1])
 
-            final_embeddings, _ = sess.run(val_op)
+            final_embeddings, _ = sess.run()
 
     end_time = datetime.now()
     print("{}:: training model - DONE".format(end_time))
@@ -131,9 +133,12 @@ if __name__ == '__main__':
     print("elapsed time (seconds) = {}".format(elapsed_time.total_seconds()))
 
     # comment out until I have window display or on Jupyter
+    '''
     tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
     plot_embeddings = np.asfarray(final_embeddings[:plot_num,:], dtype='float')
     low_dim_embs = tsne.fit_transform(plot_embeddings)
-    labels = [reverse_dictionary[i] for i in range(plot_only)]
+    labels = [data.reverse_dictionary[i] for i in range(plot_only)]
     data.plot_with_labels(low_dim_embs, labels)
+    plt.show()
+    '''
 

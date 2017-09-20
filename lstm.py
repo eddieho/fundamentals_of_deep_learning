@@ -22,7 +22,7 @@ class LSTMCell(RNNCell):
 
             # Keep W_xh and W_hh separate here as well to reuse initialization methods
             x_size = x.get_shape().as_list()[1]
-            print x.get_shape().as_list()
+            print(x.get_shape().as_list())
             W_xh = tf.get_variable('W_xh',
                 [x_size, 4 * self.num_units],
                 initializer=orthogonal_initializer())
@@ -79,7 +79,8 @@ class BNLSTMCell(RNNCell):
 
             hidden = bn_xh + bn_hh + bias
 
-            i, j, f, o = tf.split(1, 4, hidden)
+            # i, j, f, o = tf.split(1, 4, hidden) # pre 1.0 API
+            i, j, f, o = tf.split(hidden, 4, 1)
 
             new_c = c * tf.sigmoid(f) + tf.sigmoid(i) * tf.tanh(j)
             bn_new_c = batch_norm(new_c, 'c', self.training)

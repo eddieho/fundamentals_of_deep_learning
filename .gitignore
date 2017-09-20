@@ -3,3 +3,4 @@ logs
 tf_events
 tf_models
 tf_checkpoints
+__pycache__

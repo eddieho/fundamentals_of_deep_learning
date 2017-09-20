@@ -1,8 +1,9 @@
 import read_pos_data as data
 import tensorflow as tf
 import numpy as np
-from tensorflow.python import control_flow_ops
+from tensorflow.python.ops import control_flow_ops
 import time, argparse
+from datetime import datetime
 
 # Architecture
 n_gram = 3
@@ -66,7 +67,7 @@ def loss(output, y):
     with tf.variable_scope("training"):
         xentropy = tf.nn.softmax_cross_entropy_with_logits(output, y)
         loss = tf.reduce_mean(xentropy)
-        train_summary_op = tf.scalar_summary("train_cost", loss)
+        train_summary_op = tf.summary.scalar("train_cost", loss)
         return loss, train_summary_op
 
 def training(cost, global_step):
@@ -79,7 +80,7 @@ def evaluate(output, y):
     with tf.variable_scope("validation"):
         correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        val_summary_op = tf.scalar_summary("validation error", (1.0 - accuracy))
+        val_summary_op = tf.summary.scalar("validation error", (1.0 - accuracy))
         return accuracy, val_summary_op
 
 
@@ -90,7 +91,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     n_gram = args.n_gram[0]
 
-    print "Using a %d-gram model" % n_gram
+    start_time = datetime.now()
+    print("{}:: Using a %d-gram model {}".format(start_time, n_gram))
 
     data.train.prepare_n_gram(n_gram)
     data.test.prepare_n_gram(n_gram)
@@ -113,19 +115,21 @@ if __name__ == '__main__':
 
             eval_op, val_summary_op = evaluate(output, y)
 
-            summary_op = tf.merge_all_summaries()
+            summary_op = tf.summary.merge_all()
 
             saver = tf.train.Saver(max_to_keep=50)
 
-            sess = tf.Session()
+            runtimeConfig = tf.ConfigProto()
+            runtimeConfig.gpu_options.allow_growth = True
+            sess = tf.Session(config=runtimeConfig)
 
-            train_writer = tf.train.SummaryWriter("pos_tagger=" + str(n_gram) + "-gram_logs/",
+            train_writer = tf.summary.FileWriter("tf_events/pos_tagger=" + str(n_gram) + "-gram_logs/",
                                                 graph=sess.graph)
 
-            val_writer = tf.train.SummaryWriter("pos_tagger=" + str(n_gram) + "-gram_logs/",
+            val_writer = tf.summary.FileWriter("tf_events/pos_tagger=" + str(n_gram) + "-gram_logs/",
                                                 graph=sess.graph)
 
-            init_op = tf.initialize_all_variables()
+            init_op = tf.global_variables_initializer()
 
             sess.run(init_op)
 
@@ -164,7 +168,8 @@ if __name__ == '__main__':
                     avg_cost += new_cost/total_batch
                 # Display logs per epoch step
                 if epoch % display_step == 0:
-                    print "Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost)
+                    current_time = datetime.now()
+                    print("{}:: Epoch: {:04d}, cost = {:.9f}".format(current_time, epoch+1,avg_cost))
 
                     val_x, val_y = data.test.minibatch(0)
 
@@ -172,7 +177,7 @@ if __name__ == '__main__':
 
                     accuracy, val_summary = sess.run([eval_op, val_summary_op], feed_dict={x: val_x, y: val_y, phase_train: False})
                     val_writer.add_summary(val_summary, sess.run(global_step))
-                    print "Validation Error:", (1 - accuracy)
+                    print("Validation Error: {}".format(1 - accuracy))
 
 
                     test_output = sess.run(output, feed_dict={x: test_input, phase_train: False})
@@ -183,12 +188,16 @@ if __name__ == '__main__':
 
                     counter = 0
                     while counter < len(sentence):
-                        print "%s\t\t%s" % (sentence[counter], tags[counter])
+                        print("{}\t\t{}".format(sentence[counter], tags[counter]))
                         counter += 1
 
 
 
-                    saver.save(sess, "pos_tagger=" + str(n_gram) + "-gram_logs//model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
+                    saver.save(sess, "tf_checkpoints/pos_tagger=" + str(n_gram) + "-gram_logs//model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
 
 
-            print "Optimization Finished!"
+            print("Optimization Finished!")
+            end_time = datetime.now()
+            print("{}:: training model - DONE".format(end_time))
+            elapsed_time = end_time - start_time
+            print("elapsed time (seconds) = {}".format(elapsed_time.total_seconds()))

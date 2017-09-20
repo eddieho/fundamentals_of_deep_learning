@@ -1,10 +1,11 @@
 import tensorflow as tf
 from lstm import LSTMCell
 import read_imdb_data as data
+from datetime import datetime
 
 training_epochs = 1000
 batch_size = 32
-display_step = 1
+display_step = 100
 
 def embedding_layer(input, weight_shape):
     weight_init = tf.random_normal_initializer(stddev=(1.0/weight_shape[0])**0.5)
@@ -65,10 +66,10 @@ def inference(input, phase_train):
     return output
 
 def loss(output, y):
-    xentropy = tf.nn.softmax_cross_entropy_with_logits(output, y)
+    xentropy = tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y)
     loss = tf.reduce_mean(xentropy)
-    train_loss_summary_op = tf.scalar_summary("train_cost", loss)
-    val_loss_summary_op = tf.scalar_summary("val_cost", loss)
+    train_loss_summary_op = tf.summary.scalar("train_cost", loss)
+    val_loss_summary_op = tf.summary.scalar("val_cost", loss)
     return loss, train_loss_summary_op, val_loss_summary_op
 
 def training(cost, global_step):
@@ -80,7 +81,7 @@ def training(cost, global_step):
 def evaluate(output, y):
     correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    accuracy_summary_op = tf.scalar_summary("accuracy", accuracy)
+    accuracy_summary_op = tf.summary.scalar("accuracy", accuracy)
     return accuracy, accuracy_summary_op
 
 if __name__ == '__main__':
@@ -103,12 +104,18 @@ if __name__ == '__main__':
 
             saver = tf.train.Saver(max_to_keep=100)
 
-            sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
+            runtimeConfig = tf.ConfigProto()
+            runtimeConfig.gpu_options.allow_growth = True
+            runtimeConfig.allow_soft_placement = True
+            # runtimeConfig.log_device_placement = True
+            sess = tf.Session(config=runtimeConfig)
 
-            summary_writer = tf.train.SummaryWriter("imdb_lstm_logs/",
-                                                graph=sess.graph)
+            summary_writer = tf.summary.FileWriter("tf_events/imdb_lstm_logs/", tf.get_default_graph())
 
-            init_op = tf.initialize_all_variables()
+            init_op = tf.global_variables_initializer()
+
+            start_time = datetime.now()
+            print("{}:: training model - BEGIN".format(start_time))
 
             sess.run(init_op)
 
@@ -116,7 +123,7 @@ if __name__ == '__main__':
 
                 avg_cost = 0.
                 total_batch = int(data.train.num_examples/batch_size)
-                print "Total of %d minbatches in epoch %d" % (total_batch, epoch)
+                print("Total of {} minbatches in epoch {}".format(total_batch, epoch))
                 # Loop over all batches
                 for i in range(total_batch):
                     minibatch_x, minibatch_y = data.train.minibatch(batch_size)
@@ -125,16 +132,17 @@ if __name__ == '__main__':
                     summary_writer.add_summary(train_summary, sess.run(global_step))
                     # Compute average loss
                     avg_cost += new_cost/total_batch
-                    print "Training cost for batch %d in epoch %d was:" % (i, epoch), new_cost
-                    if i % 100 == 0:
-                        print "Epoch:", '%04d' % (epoch+1), "Minibatch:", '%04d' % (i+1), "cost =", "{:.9f}".format((avg_cost * total_batch)/(i+1))
+                    print("Training cost for batch {} in epoch {} was: {}".format(i, epoch+1, new_cost))
+                    if i % display_step == 0:
+                        current_time = datetime.now()
+                        print("{}:: Epoch: {}, Minibatch: {}, cost = {}".format(current_time, i+1, epoch+1, (avg_cost * total_batch/(i+1))))
                         val_x, val_y = data.val.minibatch(data.val.num_examples)
                         val_accuracy, val_summary, val_loss_summary = sess.run([eval_op, eval_summary_op, val_loss_summary_op], feed_dict={x: val_x, y: val_y, phase_train: False})
                         summary_writer.add_summary(val_summary, sess.run(global_step))
                         summary_writer.add_summary(val_loss_summary, sess.run(global_step))
-                        print "Validation Accuracy:", val_accuracy
+                        print("Validation Accuracy: {}".format(val_accuracy))
 
-                        saver.save(sess, "imdb_lstm_logs/model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
+                        saver.save(sess, "tf_events/imdb_lstm_logs/model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
                 # Display logs per epoch step
                 # if epoch % display_step == 0:
                 #     print "Epoch:", '%04d' % (epoch+1), "cost =", "{:.9f}".format(avg_cost)
@@ -147,4 +155,10 @@ if __name__ == '__main__':
                 #     saver.save(sess, "imdb_lstm_logs/model-checkpoint-" + '%04d' % (epoch+1), global_step=global_step)
 
 
-            print "Optimization Finished!"
+            print("Optimization Finished!")
+
+            end_time = datetime.now()
+            print("{}:: training model - DONE".format(end_time))
+            elapsed_time = end_time - start_time
+            print("elapsed time (seconds) = {}".format(elapsed_time.total_seconds()))
+
